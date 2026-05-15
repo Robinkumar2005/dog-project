@@ -23,50 +23,30 @@ jobs:
 
     steps:
 
-      # ==========================================
-      # CHECKOUT REPOSITORY
-      # ==========================================
-
+     
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ==========================================
-      # SETUP PYTHON
-      # ==========================================
-
+     
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ==========================================
-      # UPGRADE PIP
-      # ==========================================
-
       - name: Upgrade Pip
         run: |
           python -m pip install --upgrade pip
-
-      # ==========================================
-      # INSTALL DEPENDENCIES
-      # ==========================================
 
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
 
-      # ==========================================
-      # RUN API TESTS
-      # ==========================================
-
+     
       - name: Run API Tests
         run: |
           pytest
 
-      # ==========================================
-      # UPDATE VERSION
-      # ==========================================
-
+     
       - name: Update Version
 
         id: version_step
@@ -83,10 +63,6 @@ jobs:
 
           echo "Updated version to v$NEW_VERSION"
 
-      # ==========================================
-      # COMMIT VERSION UPDATE
-      # ==========================================
-
       - name: Commit Version Update
 
         run: |
@@ -101,10 +77,6 @@ jobs:
 
           git push
 
-      # ==========================================
-      # LOGIN TO DOCKER HUB
-      # ==========================================
-
       - name: Login to Docker Hub
 
         uses: docker/login-action@v3
@@ -113,10 +85,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ==========================================
-      # BUILD DOCKER IMAGE
-      # ==========================================
-
+      
       - name: Build Docker Image
 
         run: |
@@ -126,9 +95,7 @@ jobs:
           -t ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:latest \
           .
 
-      # ==========================================
-      # PUSH VERSION TAG
-      # ==========================================
+      
 
       - name: Push Version Docker Image
 
@@ -137,10 +104,6 @@ jobs:
           docker push \
           ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:${{ env.VERSION }}
 
-      # ==========================================
-      # PUSH LATEST TAG
-      # ==========================================
-
       - name: Push Latest Docker Image
 
         run: |
@@ -148,10 +111,7 @@ jobs:
           docker push \
           ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:latest
 
-      # ==========================================
-      # RUN AI CODE REVIEW
-      # ==========================================
-
+      
       - name: Run AI Code Review
 
         env:
