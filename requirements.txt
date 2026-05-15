@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+tensorflow
+numpy
+pillow
+python-dotenv
+requests
+streamlit
+joblib
+python-multipart
+pytest
+httpx
+langchain-core==0.2.43
+langchain-mistralai==0.1.13
+tenacity==8.2.3

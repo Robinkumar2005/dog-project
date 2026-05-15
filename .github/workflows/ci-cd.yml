@@ -1,0 +1,163 @@
+name: Dog Classifier AI CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+    paths-ignore:
+      - 'version.txt'
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+
+  ai-review-ci-cd:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ==========================================
+      # SETUP PYTHON
+      # ==========================================
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ==========================================
+      # UPGRADE PIP
+      # ==========================================
+
+      - name: Upgrade Pip
+        run: |
+          python -m pip install --upgrade pip
+
+      # ==========================================
+      # INSTALL DEPENDENCIES
+      # ==========================================
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      # ==========================================
+      # RUN API TESTS
+      # ==========================================
+
+      - name: Run API Tests
+        run: |
+          pytest
+
+      # ==========================================
+      # UPDATE VERSION
+      # ==========================================
+
+      - name: Update Version
+
+        id: version_step
+
+        run: |
+
+          VERSION=$(cat version.txt)
+
+          NEW_VERSION=$((VERSION + 1))
+
+          echo $NEW_VERSION > version.txt
+
+          echo "VERSION=v$NEW_VERSION" >> $GITHUB_ENV
+
+          echo "Updated version to v$NEW_VERSION"
+
+      # ==========================================
+      # COMMIT VERSION UPDATE
+      # ==========================================
+
+      - name: Commit Version Update
+
+        run: |
+
+          git config --global user.name "github-actions"
+
+          git config --global user.email "github-actions@github.com"
+
+          git add version.txt
+
+          git commit -m "Auto updated version" || echo "No changes to commit"
+
+          git push
+
+      # ==========================================
+      # LOGIN TO DOCKER HUB
+      # ==========================================
+
+      - name: Login to Docker Hub
+
+        uses: docker/login-action@v3
+
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ==========================================
+      # BUILD DOCKER IMAGE
+      # ==========================================
+
+      - name: Build Docker Image
+
+        run: |
+
+          docker build \
+          -t ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:${{ env.VERSION }} \
+          -t ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:latest \
+          .
+
+      # ==========================================
+      # PUSH VERSION TAG
+      # ==========================================
+
+      - name: Push Version Docker Image
+
+        run: |
+
+          docker push \
+          ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:${{ env.VERSION }}
+
+      # ==========================================
+      # PUSH LATEST TAG
+      # ==========================================
+
+      - name: Push Latest Docker Image
+
+        run: |
+
+          docker push \
+          ${{ secrets.DOCKER_USERNAME }}/dog-classifier-api:latest
+
+      # ==========================================
+      # RUN AI CODE REVIEW
+      # ==========================================
+
+      - name: Run AI Code Review
+
+        env:
+          DOG_API_KEY: ${{ secrets.DOG_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+
+        run: |
+          python ./scripts/review.py
